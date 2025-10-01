@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid"
 import { EntityTarget } from "../common/EntityTarget"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
@@ -1407,7 +1406,7 @@ export class InsertQueryBuilder<
             !this.connection.driver.isUUIDGenerationSupported() &&
             value === undefined
         ) {
-            value = uuidv4()
+            value = globalThis.crypto.randomUUID()
             expression += this.createParameter(value)
 
             if (!(valueSetIndex in this.expressionMap.locallyGenerated)) {

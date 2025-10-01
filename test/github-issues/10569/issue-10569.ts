@@ -1,7 +1,6 @@
 import "reflect-metadata"
 
 import { expect } from "chai"
-import { v4 } from "uuid"
 
 import { DataSource } from "../../../src/data-source/DataSource"
 import {
@@ -12,12 +11,13 @@ import {
 import { CreateUserContract } from "./contract/create-user-contract"
 import { User } from "./entity/user"
 
-describe("github issues > #10569 Fix type inferencing of EntityManager#create", () => {
+describe("github issues > #10569 Fix type inference of EntityManager#create", () => {
     let dataSources: DataSource[]
     before(
         async () =>
             (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
+                enabledDrivers: ["postgres"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
@@ -33,7 +33,7 @@ describe("github issues > #10569 Fix type inferencing of EntityManager#create", 
 
             const user = dataSource.manager.create(User, createUserContract)
 
-            user.id = v4()
+            user.id = globalThis.crypto.randomUUID()
 
             expect(user.id).to.exist
         })
