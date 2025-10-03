@@ -1,5 +1,6 @@
 import { expect } from "chai"
 import { exec } from "child_process"
+import { promisify } from "util"
 import { chmod, readFile, rm, unlink, writeFile } from "fs/promises"
 import { dirname } from "path"
 
@@ -46,17 +47,17 @@ describe("cli init command", () => {
     })
 
     for (const databaseOption of databaseOptions) {
-        it(`should work with ${databaseOption} option`, (done) => {
-            exec(
-                `node ${cliPath} init --name ${testProjectPath} --database ${databaseOption}`,
-                (error, _stdout, stderr) => {
-                    if (error) console.log(error)
-                    expect(error).to.not.exist
-                    expect(stderr).to.be.empty
+        it(
+            `should work with ${databaseOption} option`,
+            { timeout: 120_000 },
+            async () => {
+                const execAsync = promisify(exec)
+                const { stderr } = await execAsync(
+                    `node ${cliPath} init --name ${testProjectPath} --database ${databaseOption}`,
+                )
 
-                    done()
-                },
-            )
-        }).timeout(120000)
+                expect(stderr).to.be.empty
+            },
+        )
     }
 })

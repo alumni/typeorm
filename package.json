@@ -88,8 +88,8 @@
     "prepare": "is-ci || husky",
     "publish:preview": "pkg-pr-new publish './build/package' --template='./sample/playground'",
     "test": "npm run compile && npm run test:fast --",
-    "test:ci": "mocha --bail",
-    "test:fast": "mocha",
+    "test:ci": "vitest run --coverage --bail=5",
+    "test:fast": "vitest",
     "typecheck": "tsc --noEmit",
     "watch": "tsc --watch"
   },
@@ -120,13 +120,13 @@
     "@types/debug": "^4.1.12",
     "@types/gulp-rename": "^2.0.6",
     "@types/gulp-sourcemaps": "^0.0.38",
-    "@types/mocha": "^10.0.10",
     "@types/node": "^20.19.18",
     "@types/sha.js": "^2.4.4",
     "@types/sinon": "^17.0.4",
     "@types/sinon-chai": "^4.0.0",
     "@types/source-map-support": "^0.5.10",
     "@types/yargs": "^17.0.33",
+    "@vitest/coverage-v8": "^4.0.0-beta.16",
     "better-sqlite3": "^12.4.1",
     "chai": "^6.2.0",
     "chai-as-promised": "^8.0.2",
@@ -145,7 +145,6 @@
     "husky": "^9.1.7",
     "is-ci": "^4.1.0",
     "lint-staged": "^16.2.3",
-    "mocha": "^11.7.3",
     "mongodb": "^6.20.0",
     "mssql": "^12.0.0",
     "mysql": "^2.18.1",
@@ -167,7 +166,8 @@
     "standard-changelog": "^7.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.45.0"
+    "typescript-eslint": "^8.45.0",
+    "vitest": "^4.0.0-beta.16"
   },
   "peerDependencies": {
     "@google-cloud/spanner": "^8.0.0",

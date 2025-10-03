@@ -12,7 +12,6 @@ import { User } from "./entity/User"
 import { Role } from "./entity/Role"
 import { BaseEntity } from "../../../src"
 import { ClientRole } from "./entity/ClientRole"
-import { afterEach } from "mocha"
 
 describe("github issues > #8522 Single table inheritance returns the same discriminator value error for unrelated tables where their parents extend from the same entity", () => {
     let connections: DataSource[]

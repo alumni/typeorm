@@ -36,9 +36,9 @@ describe("persistence > orphanage > disable", () => {
         let settingRepo: Repository<Setting>
         let userId: number
 
-        beforeEach(async function () {
+        beforeEach(async function (context) {
             if (connections.length === 0) {
-                this.skip()
+                context.skip()
             }
 
             await Promise.all(

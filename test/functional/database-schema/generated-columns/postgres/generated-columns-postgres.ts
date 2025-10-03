@@ -10,7 +10,7 @@ import { PostgresDriver } from "../../../../../src/driver/postgres/PostgresDrive
 
 describe("database schema > generated columns > postgres", () => {
     let dataSources: DataSource[]
-    before(async function () {
+    before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
@@ -19,14 +19,15 @@ describe("database schema > generated columns > postgres", () => {
         })
 
         // generated columns supported from Postgres 12
-        if (
-            dataSources[0] &&
-            !(dataSources[0].driver as PostgresDriver)
-                .isGeneratedColumnsSupported
-        ) {
-            this.skip()
-            return
-        }
+        const unsupportedDataSources = dataSources.filter(
+            (dataSource) =>
+                !(dataSource.driver as PostgresDriver)
+                    .isGeneratedColumnsSupported,
+        )
+        await closeTestingConnections(unsupportedDataSources)
+        dataSources = dataSources.filter(
+            (dataSource) => dataSource.isInitialized,
+        )
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))

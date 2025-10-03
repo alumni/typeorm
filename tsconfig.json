@@ -17,10 +17,11 @@
     "strictFunctionTypes": false,
     "strictPropertyInitialization": false,
     "stripInternal": true,
+    "types": ["vitest/globals"],
     "useDefineForClassFields": false,
     "useUnknownInCatchVariables": false
   },
   "exclude": ["build", "node_modules", "temp", "tmp", "sample/playground"],
   "extends": "@tsconfig/node20/tsconfig.json",
-  "include": ["sample", "src", "test", "*.ts"]
+  "include": ["sample", "src", "test", "*.ts", "typings"]
 }

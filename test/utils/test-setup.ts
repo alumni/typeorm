@@ -12,3 +12,12 @@ process.env.TZ = "UTC"
 chai.should()
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
+
+Object.defineProperty(globalThis, "before", {
+    value: beforeAll,
+    writable: false,
+})
+Object.defineProperty(globalThis, "after", {
+    value: afterAll,
+    writable: false,
+})
