@@ -208,9 +208,9 @@ export class QueryExpressionMap {
     lockVersion?: number | Date
 
     /**
-     * Tables to be specified in the "FOR UPDATE OF" clause, referred by their alias
+     * Tables (Postgres) / columns (SAP HANA) to be specified in the `FOR UPDATE OF` clause, referred by their alias
      */
-    lockTables?: string[]
+    lockTargets?: string[]
 
     /**
      * Modify behavior when encountering locked rows. NOWAIT or SKIP LOCKED
@@ -335,7 +335,6 @@ export class QueryExpressionMap {
 
     /**
      * Extra parameters.
-     *
      * @deprecated Use standard parameters instead
      */
     nativeParameters: ObjectLiteral = {}
@@ -402,6 +401,7 @@ export class QueryExpressionMap {
 
     /**
      * Creates a main alias and adds it to the current expression map.
+     * @param alias
      */
     setMainAlias(alias: Alias): Alias {
         // if main alias is already set then remove it from the array
@@ -416,6 +416,13 @@ export class QueryExpressionMap {
 
     /**
      * Creates a new alias and adds it to the current expression map.
+     * @param options
+     * @param options.type
+     * @param options.name
+     * @param options.target
+     * @param options.tablePath
+     * @param options.subQuery
+     * @param options.metadata
      */
     createAlias(options: {
         type: "from" | "select" | "join" | "other"
@@ -448,6 +455,7 @@ export class QueryExpressionMap {
     /**
      * Finds alias with the given name.
      * If alias was not found it throw an exception.
+     * @param aliasName
      */
     findAliasByName(aliasName: string): Alias {
         const alias = this.aliases.find((alias) => alias.name === aliasName)
@@ -528,7 +536,7 @@ export class QueryExpressionMap {
         map.lockMode = this.lockMode
         map.onLocked = this.onLocked
         map.lockVersion = this.lockVersion
-        map.lockTables = this.lockTables
+        map.lockTargets = this.lockTargets
         map.withDeleted = this.withDeleted
         map.parameters = Object.assign({}, this.parameters)
         map.disableEscaping = this.disableEscaping

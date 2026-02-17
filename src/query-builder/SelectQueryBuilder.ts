@@ -1637,14 +1637,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             | "for_no_key_update"
             | "for_key_share",
         lockVersion?: undefined,
-        lockTables?: string[],
+        lockTargets?: string[],
     ): this
 
     /**
      * Sets locking mode.
      * @param lockMode
      * @param lockVersion
-     * @param lockTables
+     * @param lockTargets
      */
     setLock(
         lockMode:
@@ -1663,11 +1663,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             | "for_no_key_update"
             | "for_key_share",
         lockVersion?: number | Date,
-        lockTables?: string[],
+        lockTargets?: string[],
     ): this {
         this.expressionMap.lockMode = lockMode
         this.expressionMap.lockVersion = lockVersion
-        this.expressionMap.lockTables = lockTables
+        this.expressionMap.lockTargets = lockTargets
         return this
     }
 
@@ -2810,18 +2810,31 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     protected createLockExpression(): string {
         const driver = this.connection.driver
 
-        let lockTablesClause = ""
-
-        if (this.expressionMap.lockTables) {
-            if (!DriverUtils.isPostgresFamily(driver)) {
+        let lockTargetsClause = ""
+        if (this.expressionMap.lockTargets) {
+            if (this.expressionMap.lockTargets.length < 1) {
+                throw new TypeORMError("lockTargets cannot be an empty array")
+            }
+            if (DriverUtils.isPostgresFamily(driver)) {
+                lockTargetsClause =
+                    " OF " +
+                    this.expressionMap.lockTargets
+                        .map((target) => {
+                            // escape table aliases (Postgres)
+                            const isAlias = this.expressionMap.aliases.some(
+                                (alias) => alias.name === target,
+                            )
+                            return isAlias ? this.escape(target) : target
+                        })
+                        .join(", ")
+            } else if (driver.options.type === "sap") {
+                lockTargetsClause =
+                    " OF " + this.expressionMap.lockTargets.join(", ")
+            } else {
                 throw new TypeORMError(
                     "Lock tables not supported in selected driver",
                 )
             }
-            if (this.expressionMap.lockTables.length < 1) {
-                throw new TypeORMError("lockTables cannot be an empty array")
-            }
-            lockTablesClause = " OF " + this.expressionMap.lockTables.join(", ")
         }
 
         let onLockExpression = ""
@@ -2844,7 +2857,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         DriverUtils.isReleaseVersionOrGreater(driver, "8.0.0")
                     ) {
                         return (
-                            " FOR SHARE" + lockTablesClause + onLockExpression
+                            " FOR SHARE" + lockTargetsClause + onLockExpression
                         )
                     } else {
                         return " LOCK IN SHARE MODE"
@@ -2852,10 +2865,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 } else if (driver.options.type === "mariadb") {
                     return " LOCK IN SHARE MODE"
                 } else if (DriverUtils.isPostgresFamily(driver)) {
-                    return " FOR SHARE" + lockTablesClause + onLockExpression
+                    return " FOR SHARE" + lockTargetsClause + onLockExpression
                 } else if (driver.options.type === "sap") {
                     return (
-                        " FOR SHARE LOCK" + lockTablesClause + onLockExpression
+                        " FOR SHARE LOCK" + lockTargetsClause + onLockExpression
                     )
                 } else if (driver.options.type === "oracle") {
                     return " FOR UPDATE"
@@ -2875,7 +2888,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     DriverUtils.isPostgresFamily(driver) ||
                     driver.options.type === "sap"
                 ) {
-                    return " FOR UPDATE" + lockTablesClause + onLockExpression
+                    return " FOR UPDATE" + lockTargetsClause + onLockExpression
                 } else if (driver.options.type === "mssql") {
                     return ""
                 } else {
@@ -2884,9 +2897,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // deprecated, use pessimistic_write with onLocked = "skip_locked" instead
             case "pessimistic_partial_write":
                 if (DriverUtils.isPostgresFamily(driver)) {
-                    return " FOR UPDATE" + lockTablesClause + " SKIP LOCKED"
+                    return " FOR UPDATE" + lockTargetsClause + " SKIP LOCKED"
                 } else if (driver.options.type === "sap") {
-                    return " FOR UPDATE" + lockTablesClause + " IGNORE LOCKED"
+                    return " FOR UPDATE" + lockTargetsClause + " IGNORE LOCKED"
                 } else if (DriverUtils.isMySQLFamily(driver)) {
                     return " FOR UPDATE SKIP LOCKED"
                 } else {
@@ -2898,7 +2911,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     DriverUtils.isPostgresFamily(driver) ||
                     driver.options.type === "sap"
                 ) {
-                    return " FOR UPDATE" + lockTablesClause + " NOWAIT"
+                    return " FOR UPDATE" + lockTargetsClause + " NOWAIT"
                 } else if (DriverUtils.isMySQLFamily(driver)) {
                     return " FOR UPDATE NOWAIT"
                 } else {
@@ -2908,7 +2921,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (DriverUtils.isPostgresFamily(driver)) {
                     return (
                         " FOR NO KEY UPDATE" +
-                        lockTablesClause +
+                        lockTargetsClause +
                         onLockExpression
                     )
                 } else {
@@ -2917,7 +2930,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             case "for_key_share":
                 if (DriverUtils.isPostgresFamily(driver)) {
                     return (
-                        " FOR KEY SHARE" + lockTablesClause + onLockExpression
+                        " FOR KEY SHARE" + lockTargetsClause + onLockExpression
                     )
                 } else {
                     throw new LockNotSupportedOnGivenDriverError()
@@ -3467,27 +3480,38 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.findOptions.lock.mode === "for_no_key_update" ||
                     this.findOptions.lock.mode === "for_key_share"
                 ) {
-                    const tableNames = this.findOptions.lock.tables
-                        ? this.findOptions.lock.tables.map((table) => {
-                              const tableAlias =
-                                  this.expressionMap.aliases.find((alias) => {
-                                      return (
-                                          alias.metadata
-                                              .tableNameWithoutPrefix === table
-                                      )
-                                  })
-                              if (!tableAlias) {
-                                  throw new TypeORMError(
-                                      `"${table}" is not part of this query`,
-                                  )
-                              }
-                              return this.escape(tableAlias.name)
-                          })
-                        : undefined
+                    let lockTargets =
+                        this.findOptions.lock.targets ??
+                        this.findOptions.lock.tables
+                    if (
+                        lockTargets &&
+                        this.connection.driver.options.type === "sap"
+                    ) {
+                        throw new TypeORMError(
+                            `Repository/EntityManager API does not support lock targets for SAP HANA. Use the QueryBuilder API instead to set lock targets.`,
+                        )
+                    }
+                    lockTargets = lockTargets?.map((table) => {
+                        const tableAlias = this.expressionMap.aliases.find(
+                            (alias) => {
+                                return (
+                                    alias.metadata.tableNameWithoutPrefix ===
+                                    table
+                                )
+                            },
+                        )
+                        if (!tableAlias) {
+                            throw new TypeORMError(
+                                `"${table}" is not part of this query`,
+                            )
+                        }
+                        return this.escape(tableAlias.name)
+                    })
+
                     this.setLock(
                         this.findOptions.lock.mode,
                         undefined,
-                        tableNames,
+                        lockTargets,
                     )
 
                     if (this.findOptions.lock.onLocked) {

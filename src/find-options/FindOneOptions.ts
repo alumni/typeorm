@@ -47,7 +47,6 @@ export interface FindOneOptions<Entity = any> {
 
     /**
      * Specifies what relations should be loaded.
-     *
      * @deprecated
      */
     join?: JoinOptions
@@ -84,7 +83,11 @@ export interface FindOneOptions<Entity = any> {
                   | "pessimistic_write_or_fail"
                   | "for_no_key_update"
                   | "for_key_share"
+              /**
+               * @deprecated use "targets" instead.
+               */
               tables?: string[]
+              targets?: string[]
               onLocked?: "nowait" | "skip_locked"
           }
 

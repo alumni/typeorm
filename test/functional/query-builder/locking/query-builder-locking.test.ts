@@ -767,34 +767,58 @@ describe("query builder > locking", () => {
             }),
         ))
 
-    it("should only specify locked tables in FOR UPDATE OF clause if argument is given", () => {
+    it("should specify lockTargets in FOR UPDATE OF clause if the argument is passed", () => {
         for (const connection of connections) {
-            if (!DriverUtils.isPostgresFamily(connection.driver)) {
-                return
+            if (DriverUtils.isPostgresFamily(connection.driver)) {
+                const sql = connection
+                    .createQueryBuilder(Post, "post")
+                    .innerJoin("post.author", "user")
+                    .setLock("pessimistic_write", undefined, ["user"])
+                    .getSql()
+
+                expect(sql).to.match(/FOR UPDATE OF "user"$/)
+
+                const sql2 = connection
+                    .createQueryBuilder(Post, "post")
+                    .innerJoin("post.author", "user")
+                    .setLock("pessimistic_write", undefined, ["post", "user"])
+                    .getSql()
+
+                expect(sql2).to.match(/FOR UPDATE OF "post", "user"$/)
+            } else if (connection.driver.options.type === "sap") {
+                const sql = connection
+                    .createQueryBuilder(Post, "post")
+                    .innerJoin("post.author", "user")
+                    .setLock("pessimistic_write", undefined, ["user.name"])
+                    .getSql()
+
+                expect(sql).to.match(/FOR UPDATE OF "user"\."name"$/)
+
+                const sql2 = connection
+                    .createQueryBuilder(Post, "post")
+                    .innerJoin("post.author", "user")
+                    .setLock("pessimistic_write", undefined, [
+                        "post.title",
+                        "user.name",
+                    ])
+                    .getSql()
+
+                expect(sql2).to.match(
+                    /FOR UPDATE OF "post"\."title", "user"\."name"$/,
+                )
             }
-
-            const sql = connection
-                .createQueryBuilder(Post, "post")
-                .innerJoin("post.author", "user")
-                .setLock("pessimistic_write", undefined, ["user"])
-                .getSql()
-
-            expect(sql).to.match(/FOR UPDATE OF user$/)
-
-            const sql2 = connection
-                .createQueryBuilder(Post, "post")
-                .innerJoin("post.author", "user")
-                .setLock("pessimistic_write", undefined, ["post", "user"])
-                .getSql()
-
-            expect(sql2).to.match(/FOR UPDATE OF post, user$/)
         }
     })
 
-    it("should not allow empty array for lockTables", () =>
+    it("should not allow empty array for lockTargets", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (!DriverUtils.isPostgresFamily(connection.driver)) {
+                if (
+                    !(
+                        DriverUtils.isPostgresFamily(connection.driver) ||
+                        connection.driver.options.type === "sap"
+                    )
+                ) {
                     return
                 }
 
@@ -807,7 +831,7 @@ describe("query builder > locking", () => {
                             .getOne(),
                     )
                     .should.be.rejectedWith(
-                        "lockTables cannot be an empty array",
+                        "lockTargets cannot be an empty array",
                     )
             }),
         ))
@@ -865,45 +889,62 @@ describe("query builder > locking", () => {
             }),
         ))
 
-    it("should allow using lockTables on all types of locking", () =>
+    it("should allow using lockTargets on all types of locking", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (connection.driver.options.type !== "postgres") {
+                if (
+                    !["postgres", "sap"].includes(
+                        connection.driver.options.type,
+                    )
+                ) {
                     return
                 }
 
+                const lockTargets =
+                    connection.driver.options.type === "sap"
+                        ? ["post.title"]
+                        : ["post"]
+
                 await connection.manager.transaction(async (entityManager) => {
-                    await Promise.all([
-                        entityManager
+                    await entityManager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoin("post.author", "user")
+                        .setLock("pessimistic_read", undefined, lockTargets)
+                        .getOne()
+                    await entityManager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoin("post.author", "user")
+                        .setLock("pessimistic_write", undefined, lockTargets)
+                        .getOne()
+                    await entityManager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoin("post.author", "user")
+                        .setLock(
+                            "pessimistic_partial_write",
+                            undefined,
+                            lockTargets,
+                        )
+                        .getOne()
+                    await entityManager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoin("post.author", "user")
+                        .setLock(
+                            "pessimistic_write_or_fail",
+                            undefined,
+                            lockTargets,
+                        )
+                        .getOne()
+                    if (connection.driver.options.type === "postgres") {
+                        await entityManager
                             .createQueryBuilder(Post, "post")
                             .leftJoin("post.author", "user")
-                            .setLock("pessimistic_read", undefined, ["post"])
-                            .getOne(),
-                        entityManager
-                            .createQueryBuilder(Post, "post")
-                            .leftJoin("post.author", "user")
-                            .setLock("pessimistic_write", undefined, ["post"])
-                            .getOne(),
-                        entityManager
-                            .createQueryBuilder(Post, "post")
-                            .leftJoin("post.author", "user")
-                            .setLock("pessimistic_partial_write", undefined, [
-                                "post",
-                            ])
-                            .getOne(),
-                        entityManager
-                            .createQueryBuilder(Post, "post")
-                            .leftJoin("post.author", "user")
-                            .setLock("pessimistic_write_or_fail", undefined, [
-                                "post",
-                            ])
-                            .getOne(),
-                        entityManager
-                            .createQueryBuilder(Post, "post")
-                            .leftJoin("post.author", "user")
-                            .setLock("for_no_key_update", undefined, ["post"])
-                            .getOne(),
-                    ])
+                            .setLock(
+                                "for_no_key_update",
+                                undefined,
+                                lockTargets,
+                            )
+                            .getOne()
+                    }
                 }).should.not.be.rejected
             }),
         ))

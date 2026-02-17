@@ -570,10 +570,15 @@ describe("repository > find options > locking", () => {
             }),
         ))
 
-    it("should not allow empty array for lockTables", () =>
+    it("should not allow empty array for lockTargets", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (!DriverUtils.isPostgresFamily(connection.driver)) {
+                if (
+                    !(
+                        DriverUtils.isPostgresFamily(connection.driver) ||
+                        connection.driver.options.type === "sap"
+                    )
+                ) {
                     return
                 }
 
@@ -581,16 +586,16 @@ describe("repository > find options > locking", () => {
                     .transaction((entityManager) =>
                         entityManager.getRepository(Post).findOne({
                             where: { id: 1 },
-                            lock: { mode: "pessimistic_write", tables: [] },
+                            lock: { mode: "pessimistic_write", targets: [] },
                         }),
                     )
                     .should.be.rejectedWith(
-                        "lockTables cannot be an empty array",
+                        "lockTargets cannot be an empty array",
                     )
             }),
         ))
 
-    it("should throw error when specifying a table that is not part of the query", () =>
+    it("should throw error when specifying a lockTarget table that is not part of the query", () =>
         Promise.all(
             connections.map(async (connection) => {
                 if (!DriverUtils.isPostgresFamily(connection.driver)) {
@@ -627,7 +632,7 @@ describe("repository > find options > locking", () => {
                                 relations: { author: true },
                                 lock: {
                                     mode: "pessimistic_write",
-                                    tables: ["post"],
+                                    targets: ["post"],
                                 },
                             }),
                             entityManager.getRepository(Post).findOne({
@@ -643,7 +648,7 @@ describe("repository > find options > locking", () => {
             }),
         ))
 
-    it("should allow using lockTables on all types of locking", () =>
+    it("should allow using lockTargets on all types of locking", () =>
         Promise.all(
             connections.map(async (connection) => {
                 if (connection.driver.options.type !== "postgres") {
@@ -657,7 +662,7 @@ describe("repository > find options > locking", () => {
                             relations: { author: true },
                             lock: {
                                 mode: "pessimistic_read",
-                                tables: ["post"],
+                                targets: ["post"],
                             },
                         }),
                         entityManager.getRepository(Post).findOne({
@@ -665,7 +670,7 @@ describe("repository > find options > locking", () => {
                             relations: { author: true },
                             lock: {
                                 mode: "pessimistic_write",
-                                tables: ["post"],
+                                targets: ["post"],
                             },
                         }),
                         entityManager.getRepository(Post).findOne({
@@ -673,7 +678,7 @@ describe("repository > find options > locking", () => {
                             relations: { author: true },
                             lock: {
                                 mode: "pessimistic_partial_write",
-                                tables: ["post"],
+                                targets: ["post"],
                             },
                         }),
                         entityManager.getRepository(Post).findOne({
@@ -681,7 +686,7 @@ describe("repository > find options > locking", () => {
                             relations: { author: true },
                             lock: {
                                 mode: "pessimistic_write_or_fail",
-                                tables: ["post"],
+                                targets: ["post"],
                             },
                         }),
                         entityManager.getRepository(Post).findOne({
@@ -689,7 +694,7 @@ describe("repository > find options > locking", () => {
                             relations: { author: true },
                             lock: {
                                 mode: "for_no_key_update",
-                                tables: ["post"],
+                                targets: ["post"],
                             },
                         }),
                         entityManager.getRepository(Post).findOne({
@@ -697,7 +702,7 @@ describe("repository > find options > locking", () => {
                             relations: { author: true },
                             lock: {
                                 mode: "for_key_share",
-                                tables: ["post"],
+                                targets: ["post"],
                             },
                         }),
                     ]),
@@ -724,7 +729,7 @@ describe("repository > find options > locking", () => {
                         },
                         lock: {
                             mode: "pessimistic_write",
-                            tables: ["image"],
+                            targets: ["image"],
                         },
                     }),
                 )
