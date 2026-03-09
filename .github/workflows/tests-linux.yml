@@ -12,21 +12,11 @@ jobs:
     if: ${{ inputs.node-version >= 22 }}
     runs-on: ubuntu-latest
 
-    services:
-      cockroachdb:
-        image: cockroachdb/cockroach:v24.3.8
-        ports:
-          - "26257:26257"
-        env:
-          COCKROACH_ARGS: "start-single-node --insecure --cache=1GB --store=type=mem,size=4GB"
-        options: >-
-          --health-cmd "cockroach sql --insecure -e 'SELECT 1'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v6
+
+      - run: docker compose up cockroachdb --detach
+
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
@@ -39,6 +29,7 @@ jobs:
 
       - run: pnpm install
       - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
+      - run: docker compose up cockroachdb --no-recreate --wait
       - run: pnpm exec c8 pnpm run test:ci
 
       - name: Coveralls Parallel

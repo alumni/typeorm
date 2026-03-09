@@ -88,14 +88,16 @@ services:
     container_name: "typeorm-cockroachdb"
     command: "start-single-node --insecure --cache=.25 --store=type=mem,size=.25"
     ports:
+      - "8080:8080"
       - "26257:26257"
     healthcheck:
       test: ["CMD", "cockroach", "sql", "--insecure", "-e", "SELECT 1"]
       interval: 10s
       timeout: 5s
       retries: 5
-    # volumes:
-    #   - cockroach-data:/cockroach/cockroach-data
+    volumes:
+      - ./docker/cockroachdb:/docker-entrypoint-initdb.d:ro
+      - cockroach-data:/cockroach/cockroach-data
 
   # oracle
   oracle:
@@ -161,6 +163,6 @@ services:
   #     - "6379:6379"
 
 volumes:
-  # cockroach-data:
+  cockroach-data:
   # oracle-data:
   volume-hana-xe:
