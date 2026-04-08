@@ -348,7 +348,7 @@ The `ConnectionManager` class has been removed. If you were using it to manage m
 `ConnectionOptionsReader` has also been simplified: `all()` was renamed to `get()` (returning all configs as an array), and the old `get(name)` and `has(name)` methods were removed. It will now search for the `ormconfig` file in `process.cwd()` instead of the application path. You can use the `root` option to change the search location.
 
 ```typescript
-const reader = new ConnectionOptionsReader({ root: process.cwd() })
+const reader = new ConnectionOptionsReader({ root: "/path/to/config/" })
 
 // when your ormconfig has a single data source
 const [options] = await reader.get()
@@ -487,7 +487,13 @@ This only applies when the relation property is explicitly set. If it is `undefi
 
 ### Logger
 
-`FileLogger` lets the underlying platform (e.g. NodeJS) handle the paths instead of determining the path relative to the app root. You can provide an absolute path (or a path relative to `process.cwd()`) if the app is not started from its root folder.
+`FileLogger` lets the underlying platform (e.g. NodeJS) handle the paths instead of determining the path relative to the app root. You can provide an absolute path (or a path relative to `process.cwd()`) if the app is not started from its root folder:
+
+```typescript
+const dataSource = new DataSource({
+    logger: new FileLogger("all", { logPath: "/path/to/file.log" }),
+})
+```
 
 ## Columns
 
