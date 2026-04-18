@@ -1,6 +1,5 @@
 import ansi from "ansis"
-import { exec } from "child_process"
-import path from "path"
+import path from "node:path"
 import type yargs from "yargs"
 import { TypeORMError } from "../error"
 import { PlatformTools } from "../platform/PlatformTools"
@@ -153,17 +152,6 @@ export class InitCommand implements yargs.CommandModule {
     // -------------------------------------------------------------------------
     // Protected Static Methods
     // -------------------------------------------------------------------------
-
-    protected static executeCommand(command: string, cwd: string) {
-        return new Promise<string>((ok, fail) => {
-            exec(command, { cwd }, (error: any, stdout: any, stderr: any) => {
-                if (stdout) return ok(stdout)
-                if (stderr) return fail(stderr)
-                if (error) return fail(error)
-                ok("")
-            })
-        })
-    }
 
     /**
      * Gets contents of the ormconfig file.
