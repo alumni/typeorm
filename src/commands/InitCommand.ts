@@ -45,12 +45,6 @@ export class InitCommand implements yargs.CommandModule {
                 describe:
                     "Set to true if docker-compose must be generated as well. False by default.",
             })
-            .option("pm", {
-                alias: "manager",
-                choices: ["npm", "yarn"],
-                default: "npm",
-                describe: "Install packages, expected values are npm or yarn.",
-            })
             .option("ms", {
                 alias: "module",
                 choices: ["commonjs", "esm"],
@@ -69,7 +63,6 @@ export class InitCommand implements yargs.CommandModule {
             const projectName = args.name
                 ? path.basename(args.name as any)
                 : undefined
-            const installNpm = args.pm === "yarn" ? false : true
             const projectIsEsm = args.ms === "esm"
             await CommandUtils.createFile(
                 basePath + "/package.json",
@@ -146,12 +139,9 @@ export class InitCommand implements yargs.CommandModule {
                 )
             }
 
-            console.log(ansi.green`Please wait, installing dependencies...`)
-            if (args.pm && installNpm) {
-                await InitCommand.executeCommand("npm install", basePath)
-            } else {
-                await InitCommand.executeCommand("yarn install", basePath)
-            }
+            console.log(
+                ansi.green`Please verify the package.json file and install dependencies using your preferred package manager.`,
+            )
 
             console.log(ansi.green`Done! Start playing with a new project!`)
         } catch (err) {
