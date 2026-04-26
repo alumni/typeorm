@@ -1,12 +1,11 @@
-import "reflect-metadata"
 import { expect } from "chai"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../../../utils/test-utils"
+} from "../../../../../test/utils/test-utils"
 import type { DataSource } from "../../../../../src/data-source"
-import { LegacyOracleNamingStrategy } from "../../../../../src/naming-strategy/LegacyOracleNamingStrategy"
+import { LegacyOracleNamingStrategy } from "../../../src/legacy-oracle-naming-strategy"
 
 describe("LegacyOracleNamingStrategy > create table using this naming strategy", () => {
     let dataSources: DataSource[]

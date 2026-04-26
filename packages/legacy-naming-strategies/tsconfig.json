@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "strictPropertyInitialization": false
+  },
+  "include": ["src", "test"],
+  "exclude": ["dist", "node_modules"],
+  "extends": "@tsconfig/node20/tsconfig.json"
+}

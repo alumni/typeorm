@@ -1,7 +1,6 @@
-import "reflect-metadata"
 import { expect } from "chai"
-import { LegacyOracleNamingStrategy } from "../../../../../src/naming-strategy/LegacyOracleNamingStrategy"
-import { RandomGenerator } from "../../../../../src/util/RandomGenerator"
+import { LegacyOracleNamingStrategy } from "../../../src/legacy-oracle-naming-strategy"
+import { RandomGeneratorV0 } from "../../../src/random-generator-v0"
 
 describe("LegacyOracleNamingStrategy > column shortening", () => {
     it("should truncate column names to the limit", () => {
@@ -20,7 +19,7 @@ describe("LegacyOracleNamingStrategy > column shortening", () => {
         ).to.equal("veryVeryVeryLongLongLongLongNa")
         expect(
             legacyOracleNamingStrategy.columnName(
-                RandomGenerator.sha1("seed1"),
+                RandomGeneratorV0.sha1("seed1"),
                 "",
                 [],
             ).length,
@@ -32,7 +31,7 @@ describe("LegacyOracleNamingStrategy > column shortening", () => {
             "hash",
         )
         const columnName: string =
-            "veryVeryVeryLongLongLongLongName" + RandomGenerator.sha1("seed2")
+            "veryVeryVeryLongLongLongLongName" + RandomGeneratorV0.sha1("seed2")
         const hashedColumnName: string = legacyOracleNamingStrategy.columnName(
             columnName,
             "",
